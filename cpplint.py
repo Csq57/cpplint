@@ -1788,7 +1788,7 @@ class FileInfo:
                     root_dir = os.path.dirname(root_dir)
                     one_up_dir = os.path.dirname(one_up_dir)
 
-                prefix = os.path.commonprefix([root_dir, project_dir])
+                prefix = os.path.commonpath([root_dir, project_dir])
                 return fullname[len(prefix) + 1 :]
 
             # Not SVN <= 1.6? Try to find a git, hg, or svn top level directory by
@@ -1809,7 +1809,7 @@ class FileInfo:
                 or os.path.exists(os.path.join(root_dir, ".hg"))
                 or os.path.exists(os.path.join(root_dir, ".svn"))
             ):
-                prefix = os.path.commonprefix([root_dir, project_dir])
+                prefix = os.path.commonpath([root_dir, project_dir])
                 return fullname[len(prefix) + 1 :]
 
         # Don't know what to do; header guard warnings may be wrong...
@@ -7980,14 +7980,12 @@ def _IsParentOrSame(parent, child):
     if parent == child:
         return True
 
-    prefix = os.path.commonprefix([parent, child])
-    if prefix != parent:
+    # Compare complete path components rather than character prefixes.
+    try:
+        return os.path.commonpath([parent, child]) == parent
+    except ValueError:
+        # Windows paths on different drives have no common ancestor.
         return False
-    # Note: os.path.commonprefix operates on character basis, so
-    # take extra care of situations like '/foo/ba' and '/foo/bar/baz'
-    child_suffix = child[len(prefix) :]
-    child_suffix = child_suffix.lstrip(os.sep)
-    return child == os.path.join(prefix, child_suffix)
 
 
 def main():
