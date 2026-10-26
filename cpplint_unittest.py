@@ -7415,6 +7415,7 @@ def run_around_tests(pytestconfig: pytest.Config):
 
 
 def test_is_parent_or_same_uses_complete_path_components(tmp_path):
+    """Check component boundaries and cross-drive behavior."""
     root = tmp_path / "repo"
     assert cpplint._IsParentOrSame(str(root), str(root))
     assert cpplint._IsParentOrSame(str(root), str(root / "sub" / "source.cc"))
@@ -7439,6 +7440,7 @@ def test_is_parent_or_same_uses_complete_path_components(tmp_path):
 def test_file_info_repository_name_without_commonprefix(
     tmp_path, monkeypatch, metadata, legacy_svn
 ):
+    """Verify Git, Hg, and SVN repository-relative file paths."""
     monkeypatch.setattr(cpplint, "_repository", None)
     root = tmp_path / "repo"
     source_dir = root / "src"
@@ -7449,6 +7451,41 @@ def test_file_info_repository_name_without_commonprefix(
     source = source_dir / "example.h"
     source.write_text("", encoding="utf-8")
     assert cpplint.FileInfo(str(source)).RepositoryName() == "src/example.h"
+
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX double-slash paths")
+def test_is_parent_or_same_double_slash_root():
+    """Recognize descendants under a double-slash root but reject siblings."""
+    root = "//tmp/cpplint_repo"
+    assert cpplint._IsParentOrSame(root, "//tmp/cpplint_repo/src/a.h")
+    assert not cpplint._IsParentOrSame(root, "//tmp/cpplint_repository/src/a.h")
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX double-slash paths")
+@pytest.mark.parametrize(
+    ("metadata", "legacy_svn"),
+    [
+        (".git", False),
+        (".hg", False),
+        (".svn", False),
+        (".svn", True),
+    ],
+)
+def test_double_slash_repository_name(tmp_path, monkeypatch, metadata, legacy_svn):
+    """Keep repo-relative names for POSIX double-slash paths with VCS metadata."""
+    monkeypatch.setattr(cpplint, "_repository", None)
+    root = tmp_path / "repo"
+    source_dir = root / "src"
+    source_dir.mkdir(parents=True)
+    (root / metadata).mkdir()
+    if legacy_svn:
+        (source_dir / ".svn").mkdir()
+    source_file = source_dir / "example.h"
+    source_file.write_text("", encoding="utf-8")
+    double_slash_name = "/" + str(source_file)
+    assert double_slash_name.startswith("//")
+    assert cpplint.FileInfo(double_slash_name).RepositoryName() == "src/example.h"
 
 
 if __name__ == "__main__":
