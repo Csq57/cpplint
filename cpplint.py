@@ -51,6 +51,7 @@ import glob
 import itertools
 import math  # for log
 import os
+import pathlib
 import re
 import string
 import sys
@@ -1788,8 +1789,7 @@ class FileInfo:
                     root_dir = os.path.dirname(root_dir)
                     one_up_dir = os.path.dirname(one_up_dir)
 
-                prefix = os.path.commonpath([root_dir, project_dir])
-                return fullname[len(prefix) + 1 :]
+                return pathlib.PurePath(fullname).relative_to(root_dir).as_posix()
 
             # Not SVN <= 1.6? Try to find a git, hg, or svn top level directory by
             # searching up from the current path.
@@ -1809,8 +1809,7 @@ class FileInfo:
                 or os.path.exists(os.path.join(root_dir, ".hg"))
                 or os.path.exists(os.path.join(root_dir, ".svn"))
             ):
-                prefix = os.path.commonpath([root_dir, project_dir])
-                return fullname[len(prefix) + 1 :]
+                return pathlib.PurePath(fullname).relative_to(root_dir).as_posix()
 
         # Don't know what to do; header guard warnings may be wrong...
         return fullname
@@ -7982,7 +7981,7 @@ def _IsParentOrSame(parent, child):
 
     # Compare complete path components rather than character prefixes.
     try:
-        return os.path.commonpath([parent, child]) == parent
+        return os.path.commonpath([parent, child]) == os.path.commonpath([parent])
     except ValueError:
         # Windows paths on different drives have no common ancestor.
         return False
