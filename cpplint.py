@@ -51,6 +51,7 @@ import glob
 import itertools
 import math  # for log
 import os
+import pathlib
 import re
 import string
 import sys
@@ -1788,7 +1789,7 @@ class FileInfo:
                     root_dir = os.path.dirname(root_dir)
                     one_up_dir = os.path.dirname(one_up_dir)
 
-                return os.path.relpath(fullname, root_dir).replace("\\", "/")
+                return pathlib.PurePath(fullname).relative_to(root_dir).as_posix()
 
             # Not SVN <= 1.6? Try to find a git, hg, or svn top level directory by
             # searching up from the current path.
@@ -1808,7 +1809,7 @@ class FileInfo:
                 or os.path.exists(os.path.join(root_dir, ".hg"))
                 or os.path.exists(os.path.join(root_dir, ".svn"))
             ):
-                return os.path.relpath(fullname, root_dir).replace("\\", "/")
+                return pathlib.PurePath(fullname).relative_to(root_dir).as_posix()
 
         # Don't know what to do; header guard warnings may be wrong...
         return fullname
