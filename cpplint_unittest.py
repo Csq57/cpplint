@@ -7453,7 +7453,6 @@ def test_file_info_repository_name_without_commonprefix(
     assert cpplint.FileInfo(str(source)).RepositoryName() == "src/example.h"
 
 
-
 @pytest.mark.skipif(os.name == "nt", reason="POSIX double-slash paths")
 def test_is_parent_or_same_double_slash_root():
     """Recognize descendants under a double-slash root but reject siblings."""
